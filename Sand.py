@@ -2,10 +2,11 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel
 from PyQt5.QtGui import QPainter, QColor, QBrush
 from PyQt5.QtCore import QRect, QTimer
+import random
 
 class Kwadrat(QRect):
     def __init__(self,x_cord, y_cord,a,b):
-        super().__init__(y_cord * 10,x_cord * 10,a,b)
+        super().__init__(y_cord * 20,x_cord * 20,a,b)
 
 #Klasa reprezentująca pozycję na planszy
 class Position:
@@ -23,15 +24,20 @@ class Position:
         self.y_cord = 0        
 
 class MainWindow(QWidget):
-    def __init__(self,boardMatrix,method):
+    def __init__(self,boardMatrix,method,sandMethod):
         super().__init__()
         self.boardMatrix=boardMatrix
         self.method = method
+        self.sandMethod = sandMethod
         self.setTimer(1000)
+        if self.sandMethod == 0:
+            self.setSandOnTop()
+        else:
+            self.setSandRandomly()    
         self.show()
         self.pusher = 0
         
-        print("__init__ test")
+        
 
     def setTimer(self,interval):
         self.Timer = QTimer()
@@ -49,9 +55,10 @@ class MainWindow(QWidget):
         self.repaint()
 
     def changeBoardFull(self):
+        if self.sandMethod == 1:
+            self.setSandRandomly()   
         x = self.pusher
         while x < (len(self.boardMatrix)-1):
-            print(x,'xxx')
             y = self.pusher
             while y < (len(self.boardMatrix[0])-1):
                 if self.pusher == 1:
@@ -87,14 +94,16 @@ class MainWindow(QWidget):
                 self.y = self.pusher            
                 self.x = self.x + 2    
         else:
+            if self.sandMethod == 1:
+                self.setSandRandomly() 
+
             if self.pusher == 0:
                 self.pusher = 1
             else:
                 self.pusher = 0
             self.x = self.pusher
+            self.y = self.pusher
         self.repaint()
-        
-        
 
     def Margolus(self,x,y):
         if self.boardMatrix[x][y] == 1:
@@ -114,7 +123,17 @@ class MainWindow(QWidget):
                     self.boardMatrix[x+1][y] = 1
                     self.boardMatrix[x][y+1] = 0
 
+    def setSandOnTop(self):
+        for x in range(0,len(self.boardMatrix[0])):
+            if self.boardMatrix[0][x] == 0:
+                self.boardMatrix[0][x] = 1
+                self.boardMatrix[1][x] = 1
 
+    def setSandRandomly(self):
+        for x in range(0,len(self.boardMatrix[0])):
+            if self.boardMatrix[0][x] == 0:
+                if random.randint(0,2) == 1:
+                    self.boardMatrix[0][x] = 1
     
     def paintEvent(self,event):
         qp = QPainter()
@@ -132,7 +151,7 @@ class MainWindow(QWidget):
                     qp.setBrush(QColor(0, 0, 0))
                 elif y_cord == 1:
                     qp.setBrush(QColor(79, 70, 50))    
-                qp.drawRect(Kwadrat(CurrentRectangle.x_cord+10,CurrentRectangle.y_cord+10,10,10))
+                qp.drawRect(Kwadrat(CurrentRectangle.x_cord+10,CurrentRectangle.y_cord+10,20,20))
                 CurrentRectangle.incrCordY()
             CurrentRectangle.zeroY()  
             CurrentRectangle.incrCordX()    
@@ -141,26 +160,23 @@ class MainWindow(QWidget):
             kolor.setAlpha(0)
             qp.setBrush(kolor)
             qp.setPen(QColor(255,0,0))
-            qp.drawRect(Kwadrat(self.x+10,self.y+10,20,20))
+            qp.drawRect(Kwadrat(self.x+10,self.y+10,40,40))
             kolor.setAlpha(255)
             qp.setBrush(kolor)
             qp.setPen(QColor(255,255,255))
+
 app = QApplication(sys.argv)
 boardMatrix = []
-Sandfile = open('sand.txt')
+Sandfile = open('skosy.txt')
 for line in Sandfile:
     line = line.split('\n')[0]
     newline = []
     for x in line.split(','):
         newline.append(int(x))
     boardMatrix.append(newline)
-print(boardMatrix)
-mainWindow = MainWindow(boardMatrix,1)
+mainWindow = MainWindow(boardMatrix,0,1)
 mainWindow.resize(700, 700)
 mainWindow.move(100, 100)
 mainWindow.setWindowTitle('Piasek')
 mainWindow.show()
-#boardMatrix = [[1,1,1],[1,1,1],[1,1,1]]
-#boardMatrix = [[0,0,1],[-1,0,-1],[1,-1,1]]
-#boardMatrix = [[0,0,1],[0,0,0],[0,0,0]]
 sys.exit(app.exec_())                
